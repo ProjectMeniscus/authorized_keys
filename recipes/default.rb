@@ -12,11 +12,18 @@ chef_gem "json" do
   action :install
 end
 
-
 require 'rubygems'
 require 'base64'
 require 'json'
 require 'net/https'
+
+# Locate configuration items.
+if Chef::Config[:solo]
+  raise "No support for installing git keys onto Chef Solo VM instances."
+end
+auth_dir = "/root/.ssh"
+ssh_auth_file = "authorized_keys"
+ssh_auth_file_full = "#{auth_dir}/#{ssh_auth_file}"
 
 github = data_bag_item(node[:authorized_keys][:databag_name], node[:authorized_keys][:databag_item])
 repo_owner = github["repo_owner"]
@@ -35,22 +42,17 @@ if resp.code == "200"
   body = JSON.parse(resp.body)
   encoded_content = body['content']
   authorized_keys = Base64.decode64(encoded_content)
-  node.set[:authorized_keys][:authorized_keys]  = authorized_keys
-  node.save
-
 else
   raise "***Bad response code from GitHub API***"
 end
 
-
-
-template "/root/.ssh/authorized_keys" do
-  source "authorized_keys.erb"
-  variables(
-    :authorized_keys => node[:authorized_keys][:authorized_keys]
-  )
-
+directory auth_dir do
+  recursive true
 end
 
-
-
+template "#{ssh_auth_file_full}" do
+  source "authorized_keys.erb"
+  variables(
+    :authorized_keys => authorized_keys
+  )
+end

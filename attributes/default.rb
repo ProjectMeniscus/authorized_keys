@@ -1,3 +1,2 @@
-default[:authorized_keys][:authorized_keys] = ""
-default[:authorized_keys][:databag_name] = nil
-default[:authorized_keys][:databag_item] = nil
+default[:authorized_keys][:databag_name] = 'github_key_user'
+default[:authorized_keys][:databag_item] = 'auth'
